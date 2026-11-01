@@ -33,11 +33,10 @@ export const HabitCard = ({
                     <View style = {[styles.colorDot, {backgroundColor: item.color || colors.textSecondary}]} />
                     {/*Выбранное пользователем эмодзи конкатенируется к стилю*/}
                     <Text style = {styles.cardEmoji}>{item.emoji || '📝'}</Text>
-                    {/*Если пользователь нажимает на кнопку выполнения, Сompleted конкатенируется к стилю*/}
                     <Text style = {[
                         styles.cardTitle,
                         {color: colors.text},
-                        isCompletedToday && {color: colors.textSecondary, textDecorationLine: 'line-through'}
+                        isCompletedToday && {color: colors.textSecondary, borderBottomColor: colors.success, borderBottomWidth: 2}
                         ]}>{item.title}</Text>
                 </View>
                 {/*Правая часть: блок с кнопками действий*/}
