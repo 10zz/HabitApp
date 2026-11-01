@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native';
+import { useAppTheme } from '../Themes';
 
 interface HabitMonthCalendarProps {
     completedDates: string[];       // Массив дней с выполненной привычкой.
@@ -11,6 +12,8 @@ export const HabitMonthCalendar = ({
     completedDates = [], 
     color 
 }: HabitMonthCalendarProps) => {
+    const { colors } =      useAppTheme();       // Тема
+    
     const today =           new Date();
     const currentYear =     today.getFullYear(); // Получаем текущий год...
     const currentMonth =    today.getMonth();    // ...и месяц (0-11).
@@ -49,20 +52,20 @@ export const HabitMonthCalendar = ({
     }
 
     // Обозначение цветом дней, в которых выполнена привычка.
-    const activeColor = color || '#34C759';
+    const activeColor = color || colors.success;
     const monthName = today.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
 
     // Разметка календаря -------------------------------------------------------------------------
     return (
-        <View style = {styles.calendarContainer}>
-            <Text style = {styles.monthTitle}>{monthName}</Text>
+        <View style = {[styles.calendarContainer, { borderTopColor: colors.border }]}>
+            <Text style = {[styles.monthTitle, { color: colors.text }]}>{monthName}</Text>
 
             {/* Заголовки дней недели */}
             <View style = {styles.weekHeader}>
                 {WEEK_DAYS.map(day => (
                     <Text 
                         key =   {day} 
-                        style = {styles.weekDayText}
+                        style = {[styles.weekDayText, { color: colors.textSecondary }]}
                     >
                         {day}
                     </Text>
@@ -88,14 +91,15 @@ export const HabitMonthCalendar = ({
                                 style = {[
                                     styles.dayCircle,
                                     cell.isCompleted && { backgroundColor: activeColor, borderColor: activeColor },
-                                    cell.isToday && !cell.isCompleted && styles.todayBorder
+                                    cell.isToday && !cell.isCompleted && { borderColor: colors.primary }
                                 ]}
                             >
                                 <Text
                                     style = {[
                                         styles.dayText,
+                                        { color: colors.text },
                                         cell.isCompleted && styles.completedDayText,
-                                        cell.isToday && !cell.isCompleted && styles.todayText
+                                        cell.isToday && !cell.isCompleted && { color: colors.primary }
                                     ]}
                                 >
                                     {cell.dayNumber}
@@ -156,17 +160,11 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: 'transparent',
     },
-    todayBorder: {
-        borderColor: '#007AFF',
-    },
     dayText: {
         fontSize: 14,
         color: '#333',
     },
-    todayText: {
-        color: '#007AFF',
-        fontWeight: 'bold',
-    },
+
     completedDayText: {
         color: '#fff',
         fontWeight: 'bold',

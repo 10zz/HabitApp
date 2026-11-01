@@ -1,9 +1,10 @@
 import { StyleSheet, View, ScrollView, Text, TextInput, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import React, { useState } from 'react';
+import React, { useLayoutEffect, useState } from 'react';
 import EmojiPicker from 'react-native-emoji-chooser';
 import { DataItem, USER_DATA_STORAGE_KEY, storage } from '../Storage';
+import { useAppTheme } from '../Themes';
 
 // Список доступных для выбора цветов.
 const COLORS = [
@@ -21,6 +22,7 @@ const COLORS = [
 
 export default function CreateScreen() {
     const navigation =                                      useNavigation(); // Хук для методов навигации между экранами.
+    const { colors, isDark, setMode } =                     useAppTheme();
     const [title, setTitle] =                               useState(''); // Выбранное пользователем название привычки.
     const [selectedEmoji, setSelectedEmoji] =               useState<string | null>(null); // Выбранное пользователем эмодзи.
     const [selectedColor, setSelectedColor] =               useState<string | null>(null); // Выбранный пользователем цвет.
@@ -73,15 +75,38 @@ export default function CreateScreen() {
         navigation.goBack();
     };
 
+    // Добавляем кнопкe смены темы в Header справа хуком useLayoutEffect 
+    useLayoutEffect(() => {
+        navigation.setOptions({
+            // Меняем цвет хедера и текста в зависимости от темы.
+            headerStyle: { backgroundColor: isDark ? '#1e1e1e' : '#ffffff' },
+            headerTintColor: colors.text,
+            headerRight: () => (
+                <Pressable 
+                    onPress = {() => setMode(isDark ? 'light' : 'dark')}
+                    style = {styles.themeButton}
+                >
+                    <Text>{isDark ? '☀️' : '🌙'}</Text>
+                </Pressable>
+            ),
+        });
+    // Кнопка обновляла свой текст при смене фильтра, состояния хука или темы.
+    }, [navigation, colors, isDark]);
+
     // Разметка экрана ----------------------------------------------------------------------------
     return (
-        <SafeAreaView style={styles.mainContainer}>
+        <SafeAreaView style={[styles.mainContainer, { backgroundColor: colors.background }]}>
             {/* Поле названия */}
             <TextInput
-                placeholder =   'Название'
-                value =         {title}
-                onChangeText =  {setTitle}
-                style =         {styles.titleInput}
+                placeholder =           'Название'
+                placeholderTextColor =  {colors.textSecondary}
+                value =                 {title}
+                onChangeText =          {setTitle}
+                style =                 {[styles.titleInput, { 
+                    backgroundColor: colors.inputBg, 
+                    color: colors.text, 
+                    borderColor: colors.border 
+                }]}
             />
             {/* Кнопка эмодзи */}
             <View style={styles.emojiContainer}>
@@ -110,7 +135,7 @@ export default function CreateScreen() {
                 <View style = {styles.emojiPickerContainer}>
                     <EmojiPicker
                         onSelect =      {handleSelectEmoji}
-                        mode =          "light"
+                        mode =          {isDark ? "dark" : "light"}
                         lang =          "en"
                         columnCount =   {8}
                     />
@@ -118,7 +143,7 @@ export default function CreateScreen() {
             )}
             {/* Селектор цвета */}
             <View style = {styles.colorPickHeader}>
-                <Text style = {styles.colorPickHeaderText}>Цвет:</Text>
+                <Text style = {[styles.colorPickHeaderText, {color: colors.text}]}>Цвет:</Text>
                 {/* Отображение выбранного цвета и кнопка сброса */}
                 {selectedColor ? (
                     <>
@@ -155,8 +180,9 @@ export default function CreateScreen() {
                     );
                 })}
             </ScrollView>
+            {/* Кнопка сохранения */}
             <Pressable 
-                style =     {styles.saveButton} 
+                style =     {[styles.saveButton, { backgroundColor: colors.success }]}
                 onPress =   {handleSave}
             >
                 <Text style = {styles.saveButtonText}>Сохранить запись</Text>
@@ -176,6 +202,10 @@ const styles = StyleSheet.create({
         borderColor: '#ccc',
         borderRadius: 8,
         margin: 10,
+    },
+    // Кнопка смены темы.
+    themeButton: {
+        margin: 10
     },
     // Стили для секции выбора эмодзи. ------------------------------------------------------------
     emojiContainer: {
@@ -206,6 +236,7 @@ const styles = StyleSheet.create({
     // Селектор эмодзи.
     emojiPickerContainer: {
         flex: 1,
+        minHeight: 250,
         borderWidth: 5,
         borderColor: '#200707',
         borderRadius: 12,

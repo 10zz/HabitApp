@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
 import { useState } from 'react';
 import { DataItem } from '../Storage';
 import { HabitMonthCalendar } from './HabitMonthCalendar';
+import { useAppTheme } from '../Themes';
 
 // Пропсы карточки.
 interface HabitCardProps {
@@ -20,20 +21,24 @@ export const HabitCard = ({
     onDelete 
 }: HabitCardProps) => {
     const [isExpanded, setIsExpanded] = useState(false);    // Локальное состояние для скрытия/раскрытия календаря.
-    //const colors = useAppTheme(); // Получаем цвета текущей темы
+    const { colors } = useAppTheme();                       // Получаем цвета текущей темы.
 
     // Разметка карточки --------------------------------------------------------------------------
     return (
-        <View style = {styles.cardContainer}>
+        <View style = {[styles.cardContainer, {backgroundColor: colors.card}]}>
             <View style = {styles.cardTopRow}>
                 {/* Левая часть: цвет, эмодзи, название */}
                 <View style = {styles.cardLeftRow}>
                     {/*Выбранный пользователем цвет конкатенируется к стилю*/}
-                    <View style = {[styles.colorDot, {backgroundColor: item.color || '#ccc'}]} />
+                    <View style = {[styles.colorDot, {backgroundColor: item.color || colors.textSecondary}]} />
                     {/*Выбранное пользователем эмодзи конкатенируется к стилю*/}
                     <Text style = {styles.cardEmoji}>{item.emoji || '📝'}</Text>
                     {/*Если пользователь нажимает на кнопку выполнения, Сompleted конкатенируется к стилю*/}
-                    <Text style = {[styles.cardTitle, isCompletedToday && styles.cardTitleСompleted]}>{item.title}</Text>
+                    <Text style = {[
+                        styles.cardTitle,
+                        {color: colors.text},
+                        isCompletedToday && {color: colors.textSecondary, textDecorationLine: 'line-through'}
+                        ]}>{item.title}</Text>
                 </View>
                 {/*Правая часть: блок с кнопками действий*/}
                 <View style = {styles.cardRightRow}>
@@ -45,18 +50,25 @@ export const HabitCard = ({
                     {/*Если пользователь нажимает на кнопку выполнения, background и граница окрашиваются в выбранный цвет*/}
                     <Pressable
                         onPress={() => onToggleToday(item.id)}
-                        style = {[styles.checkButton,
-                            isCompletedToday && { backgroundColor: item.color || '#34C759', borderColor: item.color || '#34C759' }
-                        ]}>
+                        style = {[
+                            styles.checkButton,
+                            { borderColor: colors.border },
+                            isCompletedToday && { backgroundColor: item.color || colors.success, borderColor: item.color || colors.success }
+                        ]}
+                    >
                         <Text style={styles.checkButtonText}>{isCompletedToday ? '✓' : ''}</Text>
                     </Pressable>
                 </View>
             </View>
             {/* Кнопка для скрытия/раскрытия календаря */}
             <Pressable
-                style = {styles.expandButton}
-                onPress={() => setIsExpanded(!isExpanded)}>
-                <Text style = {styles.expandButtonText}>
+                style={[
+                    styles.expandButton, 
+                    { borderTopColor: colors.border }
+                ]}
+                onPress={() => setIsExpanded(!isExpanded)}
+            >
+                <Text style={[styles.expandButtonText, { color: colors.primary }]}>
                     {isExpanded ? 'Скрыть календарь ▲' : 'Показать календарь ▼'}
                 </Text>
             </Pressable>
@@ -111,11 +123,6 @@ const styles = StyleSheet.create({
         fontSize: 16, 
         fontWeight: '500', 
         flexShrink: 1 
-    },
-    // Конкатенируется к cardTitle, если нажата кнопка выполнения привычки.
-    cardTitleСompleted: {
-        textDecorationLine: 'line-through',
-        color: '#999',
     },
     // Правый контейнер для кнопок.
     cardRightRow: {
