@@ -1,3 +1,6 @@
+// Компонент карточки привычки.
+// Содержит информацию о привычке и кнопки взаимодействия.
+
 import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
 import { useState } from 'react';
 import { DataItem } from '../Storage';
@@ -11,6 +14,7 @@ interface HabitCardProps {
     onToggleToday:      (id: string) => void;   // Метод для кнопки переключения выполнения привычки.
     onEdit:             (id: string) => void;   // TODO: Метод для кнопки изменения.
     onDelete:           (id: string) => void;   // Метод для кнопки удаления.
+    onOpenDetails:      () => void;             // Метод для перехода на экран деталей.
 }
 
 export const HabitCard = ({
@@ -18,7 +22,8 @@ export const HabitCard = ({
     isCompletedToday,
     onToggleToday,
     onEdit,                                                 // TODO
-    onDelete 
+    onDelete,
+    onOpenDetails
 }: HabitCardProps) => {
     const [isExpanded, setIsExpanded] = useState(false);    // Локальное состояние для скрытия/раскрытия календаря.
     const { colors } = useAppTheme();                       // Получаем цвета текущей темы.
@@ -56,6 +61,13 @@ export const HabitCard = ({
                         ]}
                     >
                         <Text style={styles.checkButtonText}>{isCompletedToday ? '✓' : ''}</Text>
+                    </Pressable>
+                    {/*Кнопка "Детали"*/}
+                    <Pressable 
+                    onPress = {onOpenDetails} 
+                    style =   {styles.iconButton}
+                    >
+                        <Text style = {styles.iconText}>ℹ️</Text>
                     </Pressable>
                 </View>
             </View>

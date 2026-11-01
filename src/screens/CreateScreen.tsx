@@ -5,6 +5,7 @@ import React, { useLayoutEffect, useState } from 'react';
 import EmojiPicker from 'react-native-emoji-chooser';
 import { DataItem, USER_DATA_STORAGE_KEY, storage } from '../Storage';
 import { useAppTheme } from '../Themes';
+import { ColorPicker } from '../components/ColorPicker';
 
 // Список доступных для выбора цветов.
 const COLORS = [
@@ -50,9 +51,7 @@ export default function CreateScreen() {
 
         // 1. Получаем текущий список из MMKV.
         const existingRecordsString = storage.getString(USER_DATA_STORAGE_KEY);
-        const existingRecords: DataItem[] = existingRecordsString
-            ? JSON.parse(existingRecordsString)
-            : [];
+        const existingRecords: DataItem[] = existingRecordsString ? JSON.parse(existingRecordsString) : [];
 
         // 2. Создаем новую запись.
         const newRecord: DataItem = {
@@ -160,26 +159,10 @@ export default function CreateScreen() {
                 )}
             </View>
             {/* Горизонтальный скролл с цветами */}
-            <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator =    {false}
-                contentContainerStyle =             {styles.colorScroll}
-            >
-                {COLORS.map((color) => {
-                    const isSelected = selectedColor === color;
-                    return (
-                        <Pressable
-                            key =       {color}
-                            onPress =   {() => setSelectedColor(color)}
-                            style =     {[
-                                styles.colorItemButton,
-                                { backgroundColor: color },
-                                isSelected && styles.colorItemButtonSelectedBorder,
-                            ]}
-                        />
-                    );
-                })}
-            </ScrollView>
+            <ColorPicker 
+                selectedColor = {selectedColor} 
+                onSelectColor = {setSelectedColor}
+            />
             {/* Кнопка сохранения */}
             <Pressable 
                 style =     {[styles.saveButton, { backgroundColor: colors.success }]}
@@ -287,20 +270,7 @@ const styles = StyleSheet.create({
         gap: 12,
         paddingVertical: 8,
     },
-    // Круглые кнопки выбора цвета.
-    colorItemButton: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.1)',
-    },
-    // Обводка кнопки кнопки выбора цвета при нажатии.
-    colorItemButtonSelectedBorder: {
-        borderWidth: 3,
-        borderColor: '#007AFF',
-        transform: [{ scale: 1.1 }],
-    },
+    // Кнопка сохранения.
     saveButton: {
         backgroundColor: '#34C759',
         padding: 16,

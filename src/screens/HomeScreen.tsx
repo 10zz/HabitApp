@@ -16,7 +16,7 @@ const getTodayString = () => {
 };
 
 export default function HomeScreen() {
-    const navigation =          useNavigation();    // Хук для методов навигации между экранами.
+    const navigation =          useNavigation<any>();    // Хук для методов навигации между экранами.
     const { setMode, colors, isDark } =  useAppTheme();      // Получаем тему.
     const today =               getTodayString();   // Сегодняшняя дата.
 
@@ -79,6 +79,15 @@ export default function HomeScreen() {
 
     // TODO: Обработчик кнопки "Редактировать".
     const handleEdit = (id: string) => { };
+
+    // Обработчик кнопки "Детали".
+    const handleOpenDetails = (item: DataItem) => {
+        // Переходим на экран из корневого стека
+        navigation.navigate('DetailsScreen', { 
+            id: item.id, 
+            habitTitle: item.title 
+        });
+    };
 
     // Кнопка фильтрации и смены темы.
     type FilterType = 'all' | 'completed' | 'uncompleted'; // Список возможных положений фильтра.
@@ -148,6 +157,7 @@ export default function HomeScreen() {
                             onToggleToday =     {handleToggle}
                             onEdit =            {handleEdit}
                             onDelete =          {handleDelete}
+                            onOpenDetails =     {() => handleOpenDetails(item)}
                         />
                     );
                 }}

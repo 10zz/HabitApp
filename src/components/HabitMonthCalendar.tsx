@@ -1,3 +1,6 @@
+// Компонент календаря выполнения привычки.
+// Рендерит календарь и отмечает на нем дни, в которых привычка была выполнена.
+
 import { View, Text, StyleSheet } from 'react-native';
 import { useAppTheme } from '../Themes';
 

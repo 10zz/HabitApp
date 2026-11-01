@@ -3,6 +3,8 @@ import { createBottomTabNavigator, createBottomTabScreen } from '@react-navigati
 import { Image } from 'react-native';
 import CreateScreen from "./screens/CreateScreen";
 import HomeScreen from "./screens/HomeScreen";
+import DetailsScreen from "./screens/DetailsScreen";
+import { createNativeStackNavigator, createNativeStackScreen } from '@react-navigation/native-stack';
 
 type TabsType = typeof Tabs;
 declare module "@react-navigation/core" {
@@ -22,12 +24,13 @@ const Tabs = createBottomTabNavigator({
                         style={{ width: size, height: size }}
                     />
                 ),
-                
+                //headerShown: false,
             },
         }),
         CreateScreen: createBottomTabScreen({
             screen: CreateScreen,
             options: {
+                
                 title: "Добавить привычку",
                 tabBarLabel: "Добавить...",
                 tabBarIcon: ({ size }) => (
@@ -36,12 +39,30 @@ const Tabs = createBottomTabNavigator({
                         style={{ width: size, height: size }}
                     />
                 ),
-                
+                //headerShown: false,
             },
         }),
     },
     screenOptions: {animation: "shift"},
 });
 
-export const Navigation = createStaticNavigation(Tabs);
+const RootStack = createNativeStackNavigator({
+    screens: {
+        Tabs: createNativeStackScreen({
+            screen: Tabs,
+            options: {
+                headerShown: false
+            },
+        }),
+        DetailsScreen: createNativeStackScreen({
+            screen: DetailsScreen,
+            options: {
+                title: 'Детали',
+                presentation: 'card',
+            },
+        }),
+    },
+});
+
+export const Navigation = createStaticNavigation(RootStack);
 
