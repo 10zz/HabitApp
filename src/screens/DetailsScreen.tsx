@@ -7,6 +7,7 @@ import { storage, USER_DATA_STORAGE_KEY, DataItem } from '../Storage';
 import { useAppTheme } from '../Themes';
 import { HabitMonthCalendar } from '../components/HabitMonthCalendar';
 import { ColorPicker } from '../components/ColorPicker';
+import { calculateStreak, calculateCompletionRate } from '../utils/Stats';
 
 export default function DetailsScreen() {
     const { colors, isDark, setMode } =             useAppTheme();                      // Тема.
@@ -86,6 +87,8 @@ export default function DetailsScreen() {
         });
     };
 
+    const streak = calculateStreak(record.completedDates);
+    const completionRate = calculateCompletionRate(record.completedDates, record.createdAt);
     // Разметка экрана ----------------------------------------------------------------------------
     return (
         <SafeAreaView style = {[styles.container, { backgroundColor: colors.background }]}>
@@ -164,7 +167,23 @@ export default function DetailsScreen() {
                             </View>
                         </View>
 
-                        <Text style = {[styles.subtitle, { color: colors.textSecondary }]}>Статистика:</Text>
+                        {/*Статистика*/}
+                        <View style={styles.statsContainer}>
+                            {/* Карточка со Streak */}
+                            <View style = {[styles.statsBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                            <Text style = {styles.statsIcon}>🔥</Text>
+                            <Text style = {[styles.statsValue, { color: colors.text }]}>{streak}</Text>
+                            <Text style = {[styles.statsLabel, { color: colors.textSecondary }]}>Дней подряд</Text>
+                            </View>
+                    
+                            {/* Карточка с процентом */}
+                            <View style = {[styles.statsBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                            <Text style = {styles.statsIcon}>📈</Text>
+                            <Text style = {[styles.statsValue, { color: colors.text }]}>{completionRate}%</Text>
+                            <Text style = {[styles.statsLabel, { color: colors.textSecondary }]}>Выполнено</Text>
+                            </View>
+                        </View>
+
                         <HabitMonthCalendar completedDates = {record.completedDates || []} color = {record.color} />
                     </View>
                 )}
@@ -255,5 +274,32 @@ const styles = StyleSheet.create({
     colorPickHeaderText: {
         fontSize: 16,
         fontWeight: 'bold',
+    },
+    // Статистика.
+    statsContainer: {
+        flexDirection: 'row',
+        gap: 12,
+        marginVertical: 16,
+    },
+    statsBox: {
+        flex: 1,
+        padding: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+        statsIcon: {
+        fontSize: 24,
+        marginBottom: 4,
+    },
+        statsValue: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        marginBottom: 2,
+    },
+        statsLabel: {
+        fontSize: 12,
+        textAlign: 'center',
     },
 });
