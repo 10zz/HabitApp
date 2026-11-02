@@ -82,9 +82,6 @@ export default function HomeScreen() {
         );
     };
 
-    // TODO: Обработчик кнопки "Редактировать".
-    const handleEdit = (id: string) => { };
-
     // Обработчик кнопки "Детали".
     const handleOpenDetails = (item: DataItem) => {
         // Переходим на экран из корневого стека
@@ -160,7 +157,6 @@ export default function HomeScreen() {
                             item =              {item}
                             isCompletedToday =  {isCompletedToday}
                             onToggleToday =     {handleToggle}
-                            onEdit =            {handleEdit}
                             onDelete =          {handleDelete}
                             onOpenDetails =     {() => handleOpenDetails(item)}
                         />

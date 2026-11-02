@@ -60,8 +60,6 @@ export default function DetailsScreen() {
         }
     }, [id]);
 
-    if (!record) return null;
-
     const handleSave = () => {
         if (!editTitle.trim()) {                        // Если поле "Название" пусто...
             Alert.alert('Ошибка', 'Введите название');  // Вывести сообщение об ошибке.
@@ -88,11 +86,11 @@ export default function DetailsScreen() {
         if (success) {
             setRecord({ ...record!, title: editTitle, emoji: editEmoji, color: editColor });
             setIsEditing(false);
+            setIsPickerVisible(false);
         }
         else {
             Alert.alert('Ошибка', 'Не удалось сохранить изменения.');
         }
-        setIsEditing(false);
     };
 
     // Форматирование даты (ДД месяц ГГГГ г.).
@@ -104,10 +102,12 @@ export default function DetailsScreen() {
         });
     };
 
+    if (!record) return null;
+
     const streak = calculateStreak(record.completedDates);
     const completionRate = calculateCompletionRate(record.completedDates, record.createdAt);
     // Разметка экрана ----------------------------------------------------------------------------
-      // Рендер ошибки, если запись не найдена.
+    // Рендер ошибки, если запись не найдена.
     if (loadError) {
         return (
         <SafeAreaView style = {[styles.container, { backgroundColor: colors.background }]}>
@@ -129,7 +129,7 @@ export default function DetailsScreen() {
                     {/* Кнопка "Редактировать" */}
                     <Pressable
                         style =     {[styles.editToggleButton, { backgroundColor: isEditing ? colors.danger : colors.primary }]}
-                        onPress =   {() => setIsEditing(!isEditing)}
+                        onPress =   {() => {setIsEditing(!isEditing), setIsPickerVisible(false)}}
                     >
                         <Text style = {styles.editToggleText}>{isEditing ? 'Отменить' : 'Редактировать'}</Text>
                     </Pressable>
@@ -137,26 +137,28 @@ export default function DetailsScreen() {
                     {isEditing ? (
                         // Режим редактирования. ------------------------------------------------------
                         <View>
+                            <ScrollView>
 
-                            {/* Поле названия */}
-                            <TextInput
-                                value =                 {editTitle}
-                                onChangeText =          {setEditTitle}
-                                placeholder =           "Название"
-                                placeholderTextColor =  {colors.textSecondary}
-                                style =                 {[styles.input, { backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.border }]}
-                            />
+                                {/* Поле названия */}
+                                <TextInput
+                                    value =                 {editTitle}
+                                    onChangeText =          {setEditTitle}
+                                    placeholder =           "Название"
+                                    placeholderTextColor =  {colors.textSecondary}
+                                    style =                 {[styles.input, { backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.border }]}
+                                />
 
-                            {/* Кнопка эмодзи */}
-                            <Pressable 
-                                style =     {[styles.emojiButton, { backgroundColor: colors.card, borderColor: colors.border }]} 
-                                onPress =   {() => setIsPickerVisible(!isPickerVisible)}
-                            >
-                                {editEmoji ? 
-                                    <Text style = {styles.emojiDisplay}>{editEmoji}</Text> : 
-                                    <Text style = {{color: colors.primary}}>Выбрать эмодзи</Text>
-                                }
-                            </Pressable>
+                                {/* Кнопка эмодзи */}
+                                <Pressable 
+                                    style =     {[styles.emojiButton, { backgroundColor: colors.card, borderColor: colors.border }]} 
+                                    onPress =   {() => setIsPickerVisible(!isPickerVisible)}
+                                >
+                                    {editEmoji ? 
+                                        <Text style = {styles.emojiDisplay}>{editEmoji}</Text> : 
+                                        <Text style = {{color: colors.primary}}>Выбрать эмодзи</Text>
+                                    }
+                                </Pressable>
+                            </ScrollView>
 
                             {/* Селектор эмодзи */}
                             {isPickerVisible && (
@@ -170,24 +172,26 @@ export default function DetailsScreen() {
                                 </View>
                             )}
 
-                            {/* Селектор цвета */}
-                            <Text style = {[styles.colorPickHeaderText, {color: colors.text}]}>Цвет:</Text>
-                            <ColorPicker
-                                selectedColor = {editColor}
-                                onSelectColor = {setEditColor}
-                            />
+                            <ScrollView>
+                                {/* Селектор цвета */}
+                                <Text style = {[styles.colorPickHeaderText, {color: colors.text}]}>Цвет:</Text>
+                                <ColorPicker
+                                    selectedColor = {editColor}
+                                    onSelectColor = {setEditColor}
+                                />
 
-                            {/* Кнопка сохранения */}
-                            <Pressable 
-                                style =     {[styles.saveButton, { backgroundColor: colors.success }]} 
-                                onPress =   {handleSave}
-                            >
-                                <Text style = {styles.saveButtonText}>Сохранить изменения</Text>
-                            </Pressable>
+                                {/* Кнопка сохранения */}
+                                <Pressable 
+                                    style =     {[styles.saveButton, { backgroundColor: colors.success }]} 
+                                    onPress =   {handleSave}
+                                >
+                                    <Text style = {styles.saveButtonText}>Сохранить изменения</Text>
+                                </Pressable>
+                            </ScrollView>
                         </View>
                     ) : (
                         // Режим просмотра. -----------------------------------------------------------
-                        <View style = {styles.viewContainer}>
+                        <ScrollView style = {styles.viewContainer}>
                             <View style = {styles.headerRow}>
                                 <Text style = {styles.emojiDisplayLarge}>{record.emoji || '📝'}</Text>
                                 <View>
@@ -217,7 +221,7 @@ export default function DetailsScreen() {
                             </View>
 
                             <HabitMonthCalendar completedDates = {record.completedDates || []} color = {record.color} />
-                        </View>
+                        </ScrollView>
                     )}
                 </View>
             </SafeAreaView>
@@ -321,16 +325,16 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-        statsIcon: {
+    statsIcon: {
         fontSize: 24,
         marginBottom: 4,
     },
-        statsValue: {
+    statsValue: {
         fontSize: 24,
         fontWeight: 'bold',
         marginBottom: 2,
     },
-        statsLabel: {
+    statsLabel: {
         fontSize: 12,
         textAlign: 'center',
     },

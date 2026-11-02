@@ -63,7 +63,7 @@ export default function CreateScreen() {
         // 3. Создаем новую запись.
         const newRecord: DataItem = {
             id: Date.now().toString(), // Уникальный ID на основе времени
-            title: title,
+            title: title.trim(),
             emoji: selectedEmoji,
             color: selectedColor,
             createdAt: Date.now(),
@@ -74,11 +74,13 @@ export default function CreateScreen() {
         const success = safeSaveRecords(storage, USER_DATA_STORAGE_KEY, [...existingRecords, newRecord]);
 
         // 5. Очищаем значения полей и возвращаемся на главный экран.
-        setTitle('');
-        setSelectedEmoji(null);
-        setSelectedColor(null);
-        if (success) 
+        
+        if (success) {
+            setTitle('');
+            setSelectedEmoji(null);
+            setSelectedColor(null);
             navigation.goBack();
+        }
         else 
             Alert.alert('Ошибка', 'Не удалось сохранить привычку. Попробуйте еще раз.');
     };
@@ -104,40 +106,42 @@ export default function CreateScreen() {
     // Разметка экрана ----------------------------------------------------------------------------
     return (
         <SafeAreaView style={[styles.mainContainer, { backgroundColor: colors.background }]}>
-            {/* Поле названия */}
-            <TextInput
-                placeholder =           'Название'
-                placeholderTextColor =  {colors.textSecondary}
-                value =                 {title}
-                onChangeText =          {setTitle}
-                style =                 {[styles.titleInput, { 
-                    backgroundColor: colors.inputBg, 
-                    color: colors.text, 
-                    borderColor: colors.border 
-                }]}
-            />
-            {/* Кнопка эмодзи */}
-            <View style={styles.emojiContainer}>
-                <Pressable
-                    style =     {styles.emojiButton}
-                    onPress =   {() => setIsEmojiPickerVisible(!isEmojiPickerVisible)}
-                >
-                    {selectedEmoji ? (
-                        <Text style = {styles.emojiDisplay}>{selectedEmoji}</Text>
-                    ) : (
-                        <Text style = {styles.emojiButtonText}>Выбрать эмодзи</Text>
-                    )}
-                </Pressable>
-                {/* Кнопка отмены выбора эмодзи. Появляется только если эмодзи выбран */}
-                {selectedEmoji && (
-                    <Pressable 
-                        onPress =   {handleClearEmoji}
-                        style =     {styles.clearButton} 
+            <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+                {/* Поле названия */}
+                <TextInput
+                    placeholder =           'Название'
+                    placeholderTextColor =  {colors.textSecondary}
+                    value =                 {title}
+                    onChangeText =          {setTitle}
+                    style =                 {[styles.titleInput, { 
+                        backgroundColor: colors.inputBg, 
+                        color: colors.text, 
+                        borderColor: colors.border 
+                    }]}
+                />
+                {/* Кнопка эмодзи */}
+                <View style={styles.emojiContainer}>
+                    <Pressable
+                        style =     {styles.emojiButton}
+                        onPress =   {() => setIsEmojiPickerVisible(!isEmojiPickerVisible)}
                     >
-                        <Text style = {styles.clearButtonText}>✕</Text>
+                        {selectedEmoji ? (
+                            <Text style = {styles.emojiDisplay}>{selectedEmoji}</Text>
+                        ) : (
+                            <Text style = {styles.emojiButtonText}>Выбрать эмодзи</Text>
+                        )}
                     </Pressable>
-                )}
-            </View>
+                    {/* Кнопка отмены выбора эмодзи. Появляется только если эмодзи выбран */}
+                    {selectedEmoji && (
+                        <Pressable 
+                            onPress =   {handleClearEmoji}
+                            style =     {styles.clearButton} 
+                        >
+                            <Text style = {styles.clearButtonText}>✕</Text>
+                        </Pressable>
+                    )}
+                </View>
+            </ScrollView>
             {/* Селектор эмодзи */}
             {isEmojiPickerVisible && (
                 <View style = {styles.emojiPickerContainer}>
@@ -149,36 +153,38 @@ export default function CreateScreen() {
                     />
                 </View>
             )}
-            {/* Селектор цвета */}
-            <View style = {styles.colorPickHeader}>
-                <Text style = {[styles.colorPickHeaderText, {color: colors.text}]}>Цвет:</Text>
-                {/* Отображение выбранного цвета и кнопка сброса */}
-                {selectedColor ? (
-                    <>
-                        <View style = {[styles.colorPreview, { backgroundColor: selectedColor }]} />
-                        <Pressable 
-                            onPress =   {() => setSelectedColor(null)} 
-                            style =     {styles.clearButton}
-                        >
-                            <Text style = {styles.clearButtonText}>✕</Text>
-                        </Pressable>
-                    </>
-                ) : (
-                    <Text style = {styles.colorClearButtonPlaceholderText}>Не выбран</Text>
-                )}
-            </View>
-            {/* Горизонтальный скролл с цветами */}
-            <ColorPicker 
-                selectedColor = {selectedColor} 
-                onSelectColor = {setSelectedColor}
-            />
-            {/* Кнопка сохранения */}
-            <Pressable 
-                style =     {[styles.saveButton, { backgroundColor: colors.success }]}
-                onPress =   {handleSave}
-            >
-                <Text style = {styles.saveButtonText}>Сохранить запись</Text>
-            </Pressable>
+            <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+                {/* Селектор цвета */}
+                <View style = {styles.colorPickHeader}>
+                    <Text style = {[styles.colorPickHeaderText, {color: colors.text}]}>Цвет:</Text>
+                    {/* Отображение выбранного цвета и кнопка сброса */}
+                    {selectedColor ? (
+                        <>
+                            <View style = {[styles.colorPreview, { backgroundColor: selectedColor }]} />
+                            <Pressable 
+                                onPress =   {() => setSelectedColor(null)} 
+                                style =     {styles.clearButton}
+                            >
+                                <Text style = {styles.clearButtonText}>✕</Text>
+                            </Pressable>
+                        </>
+                    ) : (
+                        <Text style = {styles.colorClearButtonPlaceholderText}>Не выбран</Text>
+                    )}
+                </View>
+                {/* Горизонтальный скролл с цветами */}
+                <ColorPicker 
+                    selectedColor = {selectedColor} 
+                    onSelectColor = {setSelectedColor}
+                />
+                {/* Кнопка сохранения */}
+                <Pressable 
+                    style =     {[styles.saveButton, { backgroundColor: colors.success }]}
+                    onPress =   {handleSave}
+                >
+                    <Text style = {styles.saveButtonText}>Сохранить запись</Text>
+                </Pressable>
+            </ScrollView>
         </SafeAreaView>
     );
 }

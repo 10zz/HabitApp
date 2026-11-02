@@ -12,7 +12,6 @@ interface HabitCardProps {
     item:               DataItem;               // Единичный элемент хранилища данных пользователя.
     isCompletedToday:   boolean;                // Флаг выполнения привычки сегодня.
     onToggleToday:      (id: string) => void;   // Метод для кнопки переключения выполнения привычки.
-    onEdit:             (id: string) => void;   // TODO: Метод для кнопки изменения.
     onDelete:           (id: string) => void;   // Метод для кнопки удаления.
     onOpenDetails:      () => void;             // Метод для перехода на экран деталей.
 }
@@ -21,7 +20,6 @@ export const HabitCard = ({
     item,
     isCompletedToday,
     onToggleToday,
-    onEdit,                                                 // TODO
     onDelete,
     onOpenDetails
 }: HabitCardProps) => {
