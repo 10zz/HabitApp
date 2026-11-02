@@ -42,6 +42,7 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
         gap: 12,
         marginVertical: 12,
+        margin: 10,
     },
     // Круглые кнопки выбора цвета.
     colorItemButton: {

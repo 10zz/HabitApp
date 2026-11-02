@@ -6,6 +6,7 @@ import EmojiPicker from 'react-native-emoji-chooser';
 import { DataItem, USER_DATA_STORAGE_KEY, storage } from '../Storage';
 import { useAppTheme } from '../Themes';
 import { ColorPicker } from '../components/ColorPicker';
+import { isDuplicateTitle, safeParseRecords, safeSaveRecords } from '../utils/Validation';
 
 // Список доступных для выбора цветов.
 const COLORS = [
@@ -51,9 +52,15 @@ export default function CreateScreen() {
 
         // 1. Получаем текущий список из MMKV.
         const existingRecordsString = storage.getString(USER_DATA_STORAGE_KEY);
-        const existingRecords: DataItem[] = existingRecordsString ? JSON.parse(existingRecordsString) : [];
+        const existingRecords = safeParseRecords(existingRecordsString);
 
-        // 2. Создаем новую запись.
+        // 2. Проверяем на дубликат
+        if (isDuplicateTitle(title, existingRecords)) {
+            Alert.alert('Ошибка', 'Привычка с таким названием уже существует');
+            return;
+        }
+
+        // 3. Создаем новую запись.
         const newRecord: DataItem = {
             id: Date.now().toString(), // Уникальный ID на основе времени
             title: title,
@@ -63,15 +70,17 @@ export default function CreateScreen() {
             completedDates: [],
         };
 
-        // 3. Добавляем в список и сохраняем обратно
-        const updatedRecords = [...existingRecords, newRecord];
-        storage.set(USER_DATA_STORAGE_KEY, JSON.stringify(updatedRecords));
+        // 4. Добавляем в список и сохраняем обратно
+        const success = safeSaveRecords(storage, USER_DATA_STORAGE_KEY, [...existingRecords, newRecord]);
 
-        // 4. Очищаем значения полей и возвращаемся на главный экран.
+        // 5. Очищаем значения полей и возвращаемся на главный экран.
         setTitle('');
         setSelectedEmoji(null);
         setSelectedColor(null);
-        navigation.goBack();
+        if (success) 
+            navigation.goBack();
+        else 
+            Alert.alert('Ошибка', 'Не удалось сохранить привычку. Попробуйте еще раз.');
     };
 
     // Добавляем кнопкe смены темы в Header справа хуком useLayoutEffect 

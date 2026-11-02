@@ -5,6 +5,7 @@ import { useLayoutEffect, useMemo, useState } from 'react';
 import { DataItem, USER_DATA_STORAGE_KEY, storage } from '../Storage';
 import { HabitCard } from '../components/HabitCard';
 import { useAppTheme } from '../Themes';
+import { safeParseRecords, safeSaveRecords } from '../utils/Validation';
 
 // Вспомогательная функция для получения сегодняшней даты в формате YYYY-MM-DD
 const getTodayString = () => {
@@ -23,7 +24,7 @@ export default function HomeScreen() {
     const [recordsString, setRecordsString] = useMMKVString(USER_DATA_STORAGE_KEY, storage);
     // Обновляем хранилище данных пользователя при каждом вызове setRecordsString.
     const records: DataItem[] = useMemo(() => {
-        return recordsString ? JSON.parse(recordsString) : [];
+        return safeParseRecords(recordsString);
     }, [recordsString]);
 
     // Обработчики кнопок ---------------------------------------------------------------------------
@@ -54,7 +55,8 @@ export default function HomeScreen() {
         });
 
         // Сохраняем обновленный список обратно в MMKV.
-        setRecordsString(JSON.stringify(updatedRecords));
+        const success = safeSaveRecords(storage, USER_DATA_STORAGE_KEY, updatedRecords);
+        if (!success) Alert.alert('Ошибка', 'Не удалось обновить статус.');
     };
 
     // Обработчик кнопки "Удалить".
@@ -70,7 +72,10 @@ export default function HomeScreen() {
                         // Генерируем новое хранилище на основе старого, где ID записей не равны удаляемой.
                         const updated = records.filter(r => r.id !== id);
                         // Сохраняем обновленное хранилище обратно в MMKV.
-                        setRecordsString(JSON.stringify(updated));
+                        const success = safeSaveRecords(storage, USER_DATA_STORAGE_KEY, updated);
+                        if (!success) {
+                            Alert.alert('Ошибка', 'Не удалось удалить привычку.');
+                        }
                     }
                 }
             ]

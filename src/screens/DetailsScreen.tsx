@@ -8,13 +8,15 @@ import { useAppTheme } from '../Themes';
 import { HabitMonthCalendar } from '../components/HabitMonthCalendar';
 import { ColorPicker } from '../components/ColorPicker';
 import { calculateStreak, calculateCompletionRate } from '../utils/Stats';
+import { safeParseRecords, safeSaveRecords, isDuplicateTitle } from '../utils/Validation';
 
 export default function DetailsScreen() {
     const { colors, isDark, setMode } =             useAppTheme();                      // Тема.
-    const navigation =                              useNavigation();                    // Хук для добавления кнопки смены темы на верхнюю панель.
 
+    const navigation =                              useNavigation();                    // Хук для добавления кнопки смены темы на верхнюю панель.
     const route =                                   useRoute<any>();                    // Рутер для получения деталей конкретной записи.
     const { id } =                                  route.params;                       // ИД записи
+    const [loadError, setLoadError] =               useState<boolean>(false);
 
     const [record, setRecord] =                     useState<DataItem | null>(null);    // Запись о привычке из хранилища.
 
@@ -45,13 +47,16 @@ export default function DetailsScreen() {
     // Хук для обновления данных о привычке при изменении ИД.
     useEffect(() => {
         const recordsString = storage.getString(USER_DATA_STORAGE_KEY);
-        const records: DataItem[] = recordsString ? JSON.parse(recordsString) : [];
+        const records = safeParseRecords(recordsString);
         const found = records.find(r => r.id === id);
         if (found) {
             setRecord(found);
             setEditTitle(found.title);
             setEditEmoji(found.emoji);
             setEditColor(found.color);
+        }
+        else {
+            setLoadError(true); // Запись не найдена
         }
     }, [id]);
 
@@ -65,16 +70,28 @@ export default function DetailsScreen() {
 
         // 1. Получаем текущий список из MMKV.
         const recordsString = storage.getString(USER_DATA_STORAGE_KEY);
-        const records: DataItem[] = recordsString ? JSON.parse(recordsString) : [];
+        const records = safeParseRecords(recordsString);
+
+        // Проверка дубликата при редактировании (исключая текущую запись)
+        if (isDuplicateTitle(editTitle, records, id)) {
+            Alert.alert('Ошибка', 'Другая привычка уже имеет такое название');
+            return;
+        }
 
         // 2. Обновляем список в MMKV.
         const updatedRecords = records.map(r =>
             r.id === id ? { ...r, title: editTitle, emoji: editEmoji, color: editColor } : r
         );
-        storage.set(USER_DATA_STORAGE_KEY, JSON.stringify(updatedRecords));
+        const success = safeSaveRecords(storage, USER_DATA_STORAGE_KEY, updatedRecords);
 
         // 3. Обновляем поля состояний и выходим из режима редактирования.
-        setRecord({ ...record!, title: editTitle, emoji: editEmoji, color: editColor });
+        if (success) {
+            setRecord({ ...record!, title: editTitle, emoji: editEmoji, color: editColor });
+            setIsEditing(false);
+        }
+        else {
+            Alert.alert('Ошибка', 'Не удалось сохранить изменения.');
+        }
         setIsEditing(false);
     };
 
@@ -90,106 +107,121 @@ export default function DetailsScreen() {
     const streak = calculateStreak(record.completedDates);
     const completionRate = calculateCompletionRate(record.completedDates, record.createdAt);
     // Разметка экрана ----------------------------------------------------------------------------
-    return (
+      // Рендер ошибки, если запись не найдена.
+    if (loadError) {
+        return (
         <SafeAreaView style = {[styles.container, { backgroundColor: colors.background }]}>
-            <View style = {styles.scrollContainer}>
-                
-                {/* Кнопка "Редактировать" */}
-                <Pressable
-                    style =     {[styles.editToggleButton, { backgroundColor: isEditing ? colors.danger : colors.primary }]}
-                    onPress =   {() => setIsEditing(!isEditing)}
-                >
-                    <Text style = {styles.editToggleText}>{isEditing ? 'Отменить' : 'Редактировать'}</Text>
-                </Pressable>
-
-                {isEditing ? (
-                    // Режим редактирования. ------------------------------------------------------
-                    <View>
-
-                        {/* Поле названия */}
-                        <TextInput
-                            value =                 {editTitle}
-                            onChangeText =          {setEditTitle}
-                            placeholder =           "Название"
-                            placeholderTextColor =  {colors.textSecondary}
-                            style =                 {[styles.input, { backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.border }]}
-                        />
-
-                        {/* Кнопка эмодзи */}
-                        <Pressable 
-                            style =     {[styles.emojiButton, { backgroundColor: colors.card, borderColor: colors.border }]} 
-                            onPress =   {() => setIsPickerVisible(!isPickerVisible)}
-                        >
-                            {editEmoji ? 
-                                <Text style = {styles.emojiDisplay}>{editEmoji}</Text> : 
-                                <Text style = {{color: colors.primary}}>Выбрать эмодзи</Text>
-                            }
-                        </Pressable>
-
-                        {/* Селектор эмодзи */}
-                        {isPickerVisible && (
-                            <View style = {styles.pickerContainer}>
-                                <EmojiPicker
-                                    onSelect =      {(e) => { setEditEmoji(e); setIsPickerVisible(false); }}
-                                    mode =          {isDark ? "dark" : "light"}
-                                    lang =          "en" 
-                                    columnCount =   {8}
-                                />
-                            </View>
-                        )}
-
-                        {/* Селектор цвета */}
-                        <Text style = {[styles.colorPickHeaderText, {color: colors.text}]}>Цвет:</Text>
-                        <ColorPicker
-                            selectedColor = {editColor}
-                            onSelectColor = {setEditColor}
-                        />
-
-                        {/* Кнопка сохранения */}
-                        <Pressable 
-                            style =     {[styles.saveButton, { backgroundColor: colors.success }]} 
-                            onPress =   {handleSave}
-                        >
-                            <Text style = {styles.saveButtonText}>Сохранить изменения</Text>
-                        </Pressable>
-                    </View>
-                ) : (
-                    // Режим просмотра. -----------------------------------------------------------
-                    <View style = {styles.viewContainer}>
-                        <View style = {styles.headerRow}>
-                            <Text style = {styles.emojiDisplayLarge}>{record.emoji || '📝'}</Text>
-                            <View>
-                                <Text style = {[styles.titleText, { color: colors.text }]}>{record.title}</Text>
-                                {/* Выводим дату создания */}
-                                <Text style = {[styles.dateText, { color: colors.textSecondary }]}>
-                                    Создано: {formatDate(record.createdAt)}
-                                </Text>
-                            </View>
-                        </View>
-
-                        {/*Статистика*/}
-                        <View style={styles.statsContainer}>
-                            {/* Карточка со Streak */}
-                            <View style = {[styles.statsBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                            <Text style = {styles.statsIcon}>🔥</Text>
-                            <Text style = {[styles.statsValue, { color: colors.text }]}>{streak}</Text>
-                            <Text style = {[styles.statsLabel, { color: colors.textSecondary }]}>Дней подряд</Text>
-                            </View>
-                    
-                            {/* Карточка с процентом */}
-                            <View style = {[styles.statsBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                            <Text style = {styles.statsIcon}>📈</Text>
-                            <Text style = {[styles.statsValue, { color: colors.text }]}>{completionRate}%</Text>
-                            <Text style = {[styles.statsLabel, { color: colors.textSecondary }]}>Выполнено</Text>
-                            </View>
-                        </View>
-
-                        <HabitMonthCalendar completedDates = {record.completedDates || []} color = {record.color} />
-                    </View>
-                )}
+            <View style = {{ 
+                flex: 1, 
+                justifyContent: 'center', 
+                alignItems: 'center' }}
+            >
+                <Text style = {{ color: colors.text }}>Привычка не найдена или была удалена.</Text>
             </View>
         </SafeAreaView>
-    );
+        );
+    }
+    else
+        return (
+            <SafeAreaView style = {[styles.container, { backgroundColor: colors.background }]}>
+                <View style = {styles.scrollContainer}>
+                    
+                    {/* Кнопка "Редактировать" */}
+                    <Pressable
+                        style =     {[styles.editToggleButton, { backgroundColor: isEditing ? colors.danger : colors.primary }]}
+                        onPress =   {() => setIsEditing(!isEditing)}
+                    >
+                        <Text style = {styles.editToggleText}>{isEditing ? 'Отменить' : 'Редактировать'}</Text>
+                    </Pressable>
+
+                    {isEditing ? (
+                        // Режим редактирования. ------------------------------------------------------
+                        <View>
+
+                            {/* Поле названия */}
+                            <TextInput
+                                value =                 {editTitle}
+                                onChangeText =          {setEditTitle}
+                                placeholder =           "Название"
+                                placeholderTextColor =  {colors.textSecondary}
+                                style =                 {[styles.input, { backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.border }]}
+                            />
+
+                            {/* Кнопка эмодзи */}
+                            <Pressable 
+                                style =     {[styles.emojiButton, { backgroundColor: colors.card, borderColor: colors.border }]} 
+                                onPress =   {() => setIsPickerVisible(!isPickerVisible)}
+                            >
+                                {editEmoji ? 
+                                    <Text style = {styles.emojiDisplay}>{editEmoji}</Text> : 
+                                    <Text style = {{color: colors.primary}}>Выбрать эмодзи</Text>
+                                }
+                            </Pressable>
+
+                            {/* Селектор эмодзи */}
+                            {isPickerVisible && (
+                                <View style = {styles.pickerContainer}>
+                                    <EmojiPicker
+                                        onSelect =      {(e) => { setEditEmoji(e); setIsPickerVisible(false); }}
+                                        mode =          {isDark ? "dark" : "light"}
+                                        lang =          "en" 
+                                        columnCount =   {8}
+                                    />
+                                </View>
+                            )}
+
+                            {/* Селектор цвета */}
+                            <Text style = {[styles.colorPickHeaderText, {color: colors.text}]}>Цвет:</Text>
+                            <ColorPicker
+                                selectedColor = {editColor}
+                                onSelectColor = {setEditColor}
+                            />
+
+                            {/* Кнопка сохранения */}
+                            <Pressable 
+                                style =     {[styles.saveButton, { backgroundColor: colors.success }]} 
+                                onPress =   {handleSave}
+                            >
+                                <Text style = {styles.saveButtonText}>Сохранить изменения</Text>
+                            </Pressable>
+                        </View>
+                    ) : (
+                        // Режим просмотра. -----------------------------------------------------------
+                        <View style = {styles.viewContainer}>
+                            <View style = {styles.headerRow}>
+                                <Text style = {styles.emojiDisplayLarge}>{record.emoji || '📝'}</Text>
+                                <View>
+                                    <Text style = {[styles.titleText, { color: colors.text }]}>{record.title}</Text>
+                                    {/* Выводим дату создания */}
+                                    <Text style = {[styles.dateText, { color: colors.textSecondary }]}>
+                                        Создано: {formatDate(record.createdAt)}
+                                    </Text>
+                                </View>
+                            </View>
+
+                            {/*Статистика*/}
+                            <View style={styles.statsContainer}>
+                                {/* Карточка со Streak */}
+                                <View style = {[styles.statsBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                                <Text style = {styles.statsIcon}>🔥</Text>
+                                <Text style = {[styles.statsValue, { color: colors.text }]}>{streak}</Text>
+                                <Text style = {[styles.statsLabel, { color: colors.textSecondary }]}>Дней подряд</Text>
+                                </View>
+                        
+                                {/* Карточка с процентом */}
+                                <View style = {[styles.statsBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                                <Text style = {styles.statsIcon}>📈</Text>
+                                <Text style = {[styles.statsValue, { color: colors.text }]}>{completionRate}%</Text>
+                                <Text style = {[styles.statsLabel, { color: colors.textSecondary }]}>Выполнено</Text>
+                                </View>
+                            </View>
+
+                            <HabitMonthCalendar completedDates = {record.completedDates || []} color = {record.color} />
+                        </View>
+                    )}
+                </View>
+            </SafeAreaView>
+        );
 }
 
 // Стили ------------------------------------------------------------------------------------------
